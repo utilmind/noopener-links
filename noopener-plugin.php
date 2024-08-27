@@ -1,9 +1,11 @@
 <?php
 /*
 Plugin Name: Noopener Links
-Description: Process Links in posts. Add rel="noopener" and target="_blank" for external links; Remove rel="noopener" and target="_blank" from local links; Detect local domains to strip them from the URL.
+Plugin URI: https://github.com/utilmind/noopener-links
+Description: used to process links in the posts and fix the links, according to PCI compliance.
 Version: 0.1
 Author: utilmind
+License: MIT
 */
 
 //require_once(plugin_dir_path(__FILE__) . 'functions.php');
