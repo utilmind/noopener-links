@@ -35,7 +35,7 @@ function noopener_links(string $html, array $local_domains = []): string {
                     $domains[] = $q_domain;
                 }
             }
-        }        
+        }
         $domains = implode('|', $domains);
 
         // (a href) Convert all links to our domain into local links
