@@ -6,5 +6,5 @@ And no, WordPress itself is not PCI compliant, but can run on isolated low-privi
 
 What it doing with WP-posts:
  * Add `rel="noopener"` and `target="_blank"` for EXTERNAL links;
- * Remove rel="noopener" and target="_blank" from INTERNAL (local) links;
+ * Remove `rel="noopener"` and `target="_blank"` from INTERNAL (local) links;
  * Detect local domains to strip them from the URL prefixes, to make shorter local links.
