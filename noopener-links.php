@@ -119,7 +119,10 @@ function noopener_links(string $html, array $local_domains = []): string {
     return $html;
 }
 
+
 /*
+// DEBUG/TEST data
+
 $html = '<a rel="nofollow noopener" href="https://silkcards.com/test/page.html">External (actually internal) Link</a>
 <a rel="noopener" href="/local/page">Internal Link</a>
 <a href="https://another.com" target="_self" rel="nofollow">Another External Link</a>
