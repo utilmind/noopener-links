@@ -1,5 +1,17 @@
 <?php
 
+function add_rel_noopener(&$attributes) {
+    if (preg_match('/\brel=\s*(["\'])([^\1]*?)\1/i', $attributes, $rel_matches)) {
+        $rel = $rel_matches[2];
+        if (!preg_match('/\bnoopener\b/', $rel)) {
+            $rel .= ' noopener';
+        }
+        $attributes = preg_replace('/\brel=(["\'])[^\1]*?\1/i', 'rel="' . trim($rel) . '"', $attributes);
+    }else {
+        $attributes .= ' rel="noopener"';
+    }
+}
+
 // if $local_domains specified w/o protocol:// prefix, we checking all protocols before "://".
 function noopener_links(string $html, array $local_domains = []): string {
     static $NULL_CHAR = "\x00";
@@ -73,16 +85,8 @@ function noopener_links(string $html, array $local_domains = []): string {
                 $attributes .= ' target="_blank"';
             //}
 
-            // rel
-            if (preg_match('/\brel=\s*(["\'])([^\1]*?)\1/i', $attributes, $rel_matches)) {
-                $rel = $rel_matches[2];
-                if (!preg_match('/\bnoopener\b/', $rel)) {
-                    $rel .= ' noopener';
-                }
-                $attributes = preg_replace('/\brel=(["\'])[^\1]*?\1/i', 'rel="' . trim($rel) . '"', $attributes);
-            }else {
-                $attributes .= ' rel="noopener"';
-            }
+            // rel="noopener"
+            add_rel_noopener($attributes);
 
             return '<a ' . $attributes . '>';
         }, $html);
@@ -93,18 +97,27 @@ function noopener_links(string $html, array $local_domains = []): string {
         function ($matches) {
             $attributes = $matches[1];
 
-            // target="_blank"
-            $attributes = preg_replace('/\btarget=\s*"_blank"\b\s*/i', '', $attributes);
+            // Remove target="_blank" only if there is no class="outlink". It's compromise for local links that must open in new window.
+            // But we should add rel="noopener" to such links too! If target="_blank", then there is should be noopener (as it's required by PCI compliance).
+            if (preg_match('/class\s*=\s*([\'"])(?:(?!\1).)*\boutlink\b(?:(?!\1).)*\1/', $attributes, $dummy_matches)) {
+                // if has target="_blank"
+                if (preg_match('/\btarget=\s*(["\'])_blank\1/i', $attributes, $dummy_matches)) {
+                    // rel="noopener"
+                    add_rel_noopener($attributes);
+                }
+            }else { // just regular local link. Remove target="_blank" and rel="noopener"...
+                // target="_blank"
+                $attributes = rtrim(preg_replace('/\btarget=\s*(["\'])_blank\1/i', '', $attributes));
 
-            // rel
-            $attributes = preg_replace_callback(
-                '/\brel=\s*"([^"]*)"/i',
-                function ($rel_matches) {
-                    $rel = trim(preg_replace('/\bnoopener\b/', '', $rel_matches[1]));
-                    return $rel ? 'rel="' . $rel . '"' : '';
-                },
-                $attributes
-            );
+                // Remove rel="noopener"
+                $attributes = preg_replace_callback(
+                    '/\brel=\s*(["\'])([^"]*)\1/i',
+                    function ($rel_matches) {
+                        $rel = trim(preg_replace('/\bnoopener\b/', '', $rel_matches[2]));
+                        return $rel ? 'rel="' . $rel . '"' : '';
+                    },
+                    $attributes);
+            }
 
             return '<a ' . trim($attributes) . '>';
         }, $html);
@@ -119,12 +132,11 @@ function noopener_links(string $html, array $local_domains = []): string {
     return $html;
 }
 
-
 /*
 // DEBUG/TEST data
-
 $html = '<a rel="nofollow noopener" href="https://silkcards.com/test/page.html">External (actually internal) Link</a>
-<a rel="noopener" href="/local/page">Internal Link</a>
+<a rel="noopener nofollow" href="/local/page" target="_blank">Internal Link</a>
+<a href="/local/page" target="_blank" class="outlink">Internal Link allowed in new window</a>
 <a href="https://another.com" target="_self" rel="nofollow">Another External Link</a>
 <a href="/another-local/page" target="_blank" rel="noopener noreferer">Another Internal Link</a>
 <a href=\'https://utilmind.com/demos/\'>UtilMind Solutions</a>
@@ -135,5 +147,5 @@ $html = '<a rel="nofollow noopener" href="https://silkcards.com/test/page.html">
 <img src="https://the-domain.com/img/image.gif" />
 ';
 
-echo noopener_links($html, ['https://silkcards.com', 'silkcardspro.com']);
+echo noopener_links($html, ['silkcards.com']);
 */
